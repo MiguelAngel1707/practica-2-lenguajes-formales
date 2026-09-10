@@ -278,6 +278,6 @@ drawn in `output.html`.
 
 ## 🎬 Demo video
 
-> **Link:** _(pending)_
+> **Link:** _(https://github.com/user-attachments/assets/e71e3fae-a95a-49a0-924f-c90c6c816eac)
 
 <!-- Paste the demonstration video link above. -->
