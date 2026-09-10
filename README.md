@@ -44,7 +44,7 @@ required. Any Python **3.8 or newer** works, and `output.html` opens in any brow
 
 ---
 
-## ▶️ How to run
+## ▶️ How to run it
 
 Place the input in a text file (for example the provided `input.txt`) and run:
 
