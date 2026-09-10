@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subset Construction &mdash; NFA to DFA</title>
+<style>
+  :root {
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --card: #ffffff;
+    --indigo: #4f46e5;
+    --indigo-soft: #eef2ff;
+    --green: #15803d;
+    --green-soft: #dcfce7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 0 1.25rem 4rem;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(1200px 520px at 12% -8%, #dbeafe 0%, transparent 60%),
+      radial-gradient(1000px 500px at 88% 4%, #ede9fe 0%, transparent 62%),
+      radial-gradient(900px 600px at 50% 108%, #ccfbf1 0%, transparent 58%),
+      #f7f9ff;
+    background-attachment: fixed;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; }
+  header.page {
+    background: linear-gradient(120deg, #4338ca 0%, #7c3aed 45%, #0ea5e9 100%);
+    color: #fff;
+    border-radius: 0 0 22px 22px;
+    padding: 2.6rem 2rem 2.2rem;
+    margin: 0 -1.25rem 2.2rem;
+    text-align: center;
+    box-shadow: 0 14px 36px rgba(67, 56, 202, .28);
+  }
+  header.page .wrap { max-width: 1280px; }
+  header.page h1 {
+    margin: 0 0 .5rem; font-size: 2.15rem; letter-spacing: -.02em;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, .18);
+  }
+  header.page p {
+    margin: .35rem auto 0; max-width: 74ch; color: #e8e6ff; font-size: .96rem;
+  }
+  header.page code { background: rgba(255,255,255,.18); padding: 0 .3rem; border-radius: 4px; }
+  .subtitle {
+    font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+    font-size: .82rem !important; color: #c7d2fe !important;
+  }
+
+  section {
+    position: relative; overflow: hidden;
+    background: var(--card);
+    border: 1px solid #e6e9f5;
+    border-radius: 16px;
+    padding: 1.4rem 1.5rem 1.6rem;
+    margin-bottom: 1.8rem;
+    box-shadow: 0 8px 24px rgba(30, 41, 59, .07);
+  }
+  section::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 5px;
+    background: linear-gradient(90deg, #4338ca, #7c3aed, #0ea5e9);
+  }
+  .case-head {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .8rem 1.2rem;
+    border-bottom: 1px solid var(--line); padding-bottom: .8rem; margin-bottom: 1rem;
+  }
+  .case-head h2 { margin: 0; font-size: 1.3rem; }
+  .stats { display: flex; flex-wrap: wrap; gap: .45rem; margin-left: auto; }
+  .stat {
+    background: #f1f5f9; color: var(--muted); border-radius: 999px;
+    padding: .18rem .7rem; font-size: .82rem;
+  }
+  .stat b { color: var(--ink); }
+  .stat-accent { background: var(--indigo-soft); color: var(--indigo); }
+  .stat-accent b { color: var(--indigo); }
+
+  .grid { display: flex; gap: 1.6rem; flex-wrap: wrap; align-items: flex-start; }
+  .panel { flex: 1 1 460px; min-width: 340px; }
+  .panel h3 { display: flex; align-items: center; gap: .5rem; font-size: 1.02rem; margin: .2rem 0 .7rem; }
+  .panel h4 { font-size: .88rem; text-transform: uppercase; letter-spacing: .07em;
+              color: var(--muted); margin: 1.1rem 0 .4rem; }
+  .tag {
+    font-size: .72rem; font-weight: 700; letter-spacing: .06em;
+    padding: .15rem .5rem; border-radius: 6px; color: #fff;
+  }
+  .tag-nfa { background: #0ea5e9; }
+  .tag-dfa { background: var(--indigo); }
+
+  .diagram {
+    background:
+      radial-gradient(circle at 1px 1px, #dbe2f0 1px, transparent 0) 0 0 / 18px 18px,
+      #fdfdff;
+    border: 1px solid var(--line); border-radius: 12px;
+    padding: 1rem; overflow: auto; min-height: 240px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  svg.automaton { max-width: 100%; height: auto; display: block; }
+  svg.automaton .edge {
+    fill: none; stroke: #7c8798; stroke-width: 1.8;
+    marker-end: url(#arrow);
+  }
+  svg.automaton .nlab {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 15px; font-weight: 700; text-anchor: middle;
+  }
+  svg.automaton .elab {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 12.5px; font-weight: 700; fill: #334155; text-anchor: middle;
+  }
+
+  .legend { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .7rem; }
+  .chip {
+    font-family: ui-monospace, "Cascadia Mono", monospace; font-size: .78rem;
+    background: #f1f5f9; color: #334155; border: 1px solid var(--line);
+    border-radius: 6px; padding: .12rem .45rem;
+  }
+  .chip-initial { background: var(--indigo-soft); border-color: #c7d2fe; color: var(--indigo); }
+  .chip-final { background: var(--green-soft); border-color: #bbf7d0; color: var(--green); }
+
+  .count {
+    display: inline-block; background: var(--indigo-soft); color: var(--indigo);
+    border-radius: 999px; padding: 0 .5rem; font-size: .8rem; margin-left: .25rem;
+  }
+  .count-dead { background: #f1f5f9; color: var(--muted); }
+  .hint { color: var(--muted); font-size: .82rem; margin: .1rem 0 .5rem; }
+  details.dead {
+    margin-top: 1.1rem; border: 1px dashed #cbd5e1; border-radius: 10px;
+    padding: .6rem .8rem; background: #fafbfc;
+  }
+  details.dead summary {
+    cursor: pointer; font-size: .88rem; font-weight: 600; color: var(--muted);
+  }
+  details.dead[open] summary { margin-bottom: .4rem; }
+  .scroll { max-height: 420px; overflow: auto; border-radius: 10px; }
+  table {
+    border-collapse: separate; border-spacing: 0; width: 100%;
+    font-family: ui-monospace, "Cascadia Mono", monospace; font-size: .85rem;
+    background: #fff;
+  }
+  thead th {
+    position: sticky; top: 0; z-index: 1;
+    background: #f8fafc; color: var(--muted); font-weight: 700;
+    border-bottom: 2px solid var(--line); padding: .4rem .7rem; text-align: center;
+  }
+  tbody td { border-bottom: 1px solid #f1f5f9; padding: .3rem .7rem; text-align: center; }
+  tbody tr:hover td { background: #f8faff; }
+  td.name { font-weight: 700; }
+  td.mark { border: none; background: none; width: 2.6rem; font-size: 1rem; }
+  .m-init { color: var(--indigo); font-weight: 700; }
+  .m-final { color: var(--green); font-weight: 700; }
+  tr.row-initial td.name { color: var(--indigo); }
+  tr.row-final td.name { color: var(--green); }
+
+  .note { color: #b45309; background: #fffbeb; border: 1px solid #fde68a;
+          border-radius: 8px; padding: .4rem .7rem; font-size: .85rem; }
+  footer {
+    color: #4c5a70; font-size: .85rem; text-align: center; padding: 1.2rem 0 0;
+  }
+  footer code { background: #e8ecff; padding: 0 .3rem; border-radius: 4px; }
+  @media (max-width: 860px) { .stats { margin-left: 0; } }
+</style>
+</head>
+<body>
+<header class="page">
+  <div class="wrap">
+    <h1>Subset Construction &mdash; NFA &rarr; DFA</h1>
+    <p class="subtitle">Kozen 1997, <em>Automata and Computability</em>, Lecture 6</p>
+    <p>For each case the input automaton <em>N</em> is shown next to the deterministic
+    automaton <em>M</em> built with <code>&delta;(A, a) = &bigcup; &Delta;(q, a)</code>.
+    The diagram of <em>M</em> draws only the states reachable from the initial state and
+    labels them with their new name; the table lists the states exactly as the
+    construction produces them, renamed <code>A0, A1, &hellip;</code>
+    &rarr; marks the initial state and &larr; the final states.</p>
+  </div>
+</header>
+<div class="wrap">
+
+<section>
+  <header class="case-head">
+    <h2>Case 1</h2>
+    <div class="stats">
+      <span class="stat"><b>5</b> states of N</span>
+      <span class="stat"><b>2</b> symbols</span>
+      <span class="stat"><b>32</b> subsets (2<sup>5</sup>)</span>
+      <span class="stat stat-accent"><b>7</b> reachable in M</span>
+    </div>
+  </header>
+  <div class="grid">
+    <div class="panel">
+      <h3><span class="tag tag-nfa">NFA</span> N &mdash; the input automaton</h3>
+      <div class="diagram"><svg viewBox='-16 -16 411 428' width='411' height='428' class='automaton' xmlns='http://www.w3.org/2000/svg'><defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='7' markerHeight='7' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#7c8798'/></marker></defs><path d='M 248.0 292.0 C 211.0 241.0, 315.0 241.0, 278.0 292.0' class='edge'/><rect x='254.2' y='247.5' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='263.0' y='261.2' class='elab'>a</text><path d='M 63.0 235.0 C 26.0 184.0, 130.0 184.0, 93.0 235.0' class='edge'/><rect x='69.2' y='190.5' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='78.0' y='204.2' class='elab'>a</text><path d='M 282.3 104.9 Q 379.0 200.0, 288.0 289.5' class='edge'/><rect x='312.2' y='190.5' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='321.0' y='204.2' class='elab'>a</text><path d='M 103.8 135.0 Q 170.5 114.5, 229.6 96.3' class='edge'/><rect x='161.7' y='105.0' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='170.5' y='118.7' class='elab'>a</text><path d='M 103.8 151.0 Q 170.5 171.5, 229.6 189.7' class='edge'/><rect x='161.7' y='162.0' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='170.5' y='175.7' class='elab'>a</text><path d='M 95.1 277.9 Q 151.7 346.7, 229.4 323.9' class='edge'/><rect x='152.3' y='306.6' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='161.1' y='320.3' class='elab'>a</text><path d='M 103.9 264.6 Q 189.3 289.7, 240.8 227.0' class='edge'/><rect x='171.1' y='249.6' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='179.9' y='263.3' class='elab'>b</text><path d='M 240.4 328.7 Q 136.3 396.4, 91.5 289.3' class='edge'/><rect x='144.6' y='331.4' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='153.4' y='345.1' class='elab'>a</text><path d='M 237.1 192.4 Q 151.7 167.3, 100.2 230.0' class='edge'/><rect x='152.3' y='188.4' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='161.1' y='202.1' class='elab'>b</text><path d='M 11.0 143.0 L 44.0 143.0' class='edge start'/><path d='M 11.0 257.0 L 44.0 257.0' class='edge start'/><circle cx='263.0' cy='314.0' r='27' fill='#bbf7d0' stroke='#15803d' stroke-width='2.5'/><circle cx='263.0' cy='314.0' r='22' fill='none' stroke='#15803d' stroke-width='2'/><text x='263.0' y='319.0' class='nlab' fill='#052e16'>1</text><circle cx='263.0' cy='86.0' r='27' fill='#e0e7ff' stroke='#4338ca' stroke-width='2.5'/><text x='263.0' y='91.0' class='nlab' fill='#1e1b4b'>2</text><circle cx='78.0' cy='143.0' r='27' fill='#e0e7ff' stroke='#4338ca' stroke-width='2.5'/><text x='78.0' y='148.0' class='nlab' fill='#1e1b4b'>3</text><circle cx='263.0' cy='200.0' r='27' fill='#bbf7d0' stroke='#15803d' stroke-width='2.5'/><circle cx='263.0' cy='200.0' r='22' fill='none' stroke='#15803d' stroke-width='2'/><text x='263.0' y='205.0' class='nlab' fill='#052e16'>4</text><circle cx='78.0' cy='257.0' r='27' fill='#e0e7ff' stroke='#4338ca' stroke-width='2.5'/><text x='78.0' y='262.0' class='nlab' fill='#1e1b4b'>5</text></svg></div>
+      <h4>Transition table of N</h4>
+      <table><thead><tr><th></th><th>state</th><th>a</th><th>b</th></tr></thead><tbody><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>1</td><td>{1 5}</td><td>0</td></tr><tr class=''><td class='mark'></td><td class='name'>2</td><td>{1}</td><td>0</td></tr><tr class='row-initial'><td class='mark'><span class='m-init' title='initial state'>&rarr;</span></td><td class='name'>3</td><td>{2 4}</td><td>0</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>4</td><td>0</td><td>{5}</td></tr><tr class='row-initial'><td class='mark'><span class='m-init' title='initial state'>&rarr;</span></td><td class='name'>5</td><td>{1 5}</td><td>{4}</td></tr></tbody></table>
+    </div>
+    <div class="panel">
+      <h3><span class="tag tag-dfa">DFA</span> M &mdash; reachable states</h3>
+      <div class="diagram"><svg viewBox='-16 -16 664 624' width='664' height='624' class='automaton' xmlns='http://www.w3.org/2000/svg'><defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='7' markerHeight='7' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#7c8798'/></marker></defs><path d='M 433.0 292.0 C 396.0 241.0, 500.0 241.0, 463.0 292.0' class='edge'/><rect x='431.6' y='247.5' width='32.8' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='448.0' y='261.2' class='elab'>a,b</text><path d='M 433.0 178.0 C 396.0 127.0, 500.0 127.0, 463.0 178.0' class='edge'/><rect x='439.2' y='133.5' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='448.0' y='147.2' class='elab'>a</text><path d='M 433.0 64.0 C 396.0 13.0, 500.0 13.0, 463.0 64.0' class='edge'/><rect x='439.2' y='19.5' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='448.0' y='33.2' class='elab'>b</text><path d='M 423.8 97.9 Q 332.0 143.0, 416.6 184.6' class='edge'/><rect x='381.2' y='133.5' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='390.0' y='147.2' class='elab'>a</text><path d='M 471.0 413.8 Q 632.0 314.0, 477.8 218.4' class='edge'/><rect x='531.2' y='304.5' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='540.0' y='318.2' class='elab'>a</text><path d='M 103.8 249.0 Q 170.5 228.5, 229.6 210.3' class='edge'/><rect x='161.7' y='219.0' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='170.5' y='232.7' class='elab'>a</text><path d='M 103.8 265.0 Q 170.5 285.5, 229.6 303.7' class='edge'/><rect x='161.7' y='276.0' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='170.5' y='289.7' class='elab'>b</text><path d='M 290.0 200.0 Q 355.5 200.0, 413.0 200.0' class='edge'/><rect x='346.7' y='190.5' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='355.5' y='204.2' class='elab'>a</text><path d='M 275.6 176.1 Q 321.9 88.5, 413.0 86.7' class='edge'/><rect x='329.9' y='106.3' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='338.7' y='120.0' class='elab'>b</text><path d='M 285.2 329.4 Q 355.5 378.0, 419.2 333.9' class='edge'/><rect x='346.7' y='336.5' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='355.5' y='350.2' class='elab'>a</text><path d='M 258.8 340.7 Q 219.1 592.3, 419.6 448.4' class='edge'/><rect x='278.5' y='472.2' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='287.3' y='485.9' class='elab'>b</text><path d='M 425.0 214.2 Q 355.5 257.0, 292.8 295.6' class='edge'/><rect x='346.7' y='247.5' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='355.5' y='261.2' class='elab'>b</text><path d='M 421.0 427.5 Q 321.9 425.5, 279.4 344.9' class='edge'/><rect x='329.9' y='388.7' width='17.6' height='19' rx='6' fill='#ffffff' stroke='#e2e8f0'/><text x='338.7' y='402.4' class='elab'>b</text><path d='M 11.0 257.0 L 44.0 257.0' class='edge start'/><circle cx='78.0' cy='257.0' r='27' fill='#e0e7ff' stroke='#4338ca' stroke-width='2.5'/><text x='78.0' y='262.0' class='nlab' fill='#1e1b4b'>A14</text><circle cx='263.0' cy='200.0' r='27' fill='#bbf7d0' stroke='#15803d' stroke-width='2.5'/><circle cx='263.0' cy='200.0' r='22' fill='none' stroke='#15803d' stroke-width='2'/><text x='263.0' y='205.0' class='nlab' fill='#052e16'>A28</text><circle cx='263.0' cy='314.0' r='27' fill='#bbf7d0' stroke='#15803d' stroke-width='2.5'/><circle cx='263.0' cy='314.0' r='22' fill='none' stroke='#15803d' stroke-width='2'/><text x='263.0' y='319.0' class='nlab' fill='#052e16'>A4</text><circle cx='448.0' cy='200.0' r='27' fill='#bbf7d0' stroke='#15803d' stroke-width='2.5'/><circle cx='448.0' cy='200.0' r='22' fill='none' stroke='#15803d' stroke-width='2'/><text x='448.0' y='205.0' class='nlab' fill='#052e16'>A9</text><circle cx='448.0' cy='86.0' r='27' fill='#bbf7d0' stroke='#15803d' stroke-width='2.5'/><circle cx='448.0' cy='86.0' r='22' fill='none' stroke='#15803d' stroke-width='2'/><text x='448.0' y='91.0' class='nlab' fill='#052e16'>A15</text><circle cx='448.0' cy='314.0' r='27' fill='#e9edf3' stroke='#94a3b8' stroke-width='2.5' stroke-dasharray='5 4'/><text x='448.0' y='319.0' class='nlab' fill='#475569'>A0</text><circle cx='448.0' cy='428.0' r='27' fill='#e0e7ff' stroke='#4338ca' stroke-width='2.5'/><text x='448.0' y='433.0' class='nlab' fill='#1e1b4b'>A5</text></svg></div>
+      <div class='legend'><span class='chip chip-initial'><b>A14</b> = {3 5}</span><span class='chip chip-final'><b>A28</b> = {1 2 4 5}</span><span class='chip chip-final'><b>A4</b> = {4}</span><span class='chip chip-final'><b>A9</b> = {1 5}</span><span class='chip chip-final'><b>A15</b> = {4 5}</span><span class='chip'><b>A0</b> = 0</span><span class='chip'><b>A5</b> = {5}</span></div>
+      <h4>Reachable states of M <span class="count">7</span></h4>
+      <p class="hint">These are the states the automaton can actually be in; they are
+      the ones drawn in the diagram above.</p>
+      <div class="scroll"><table><thead><tr><th></th><th>M</th><th>subset of Q</th><th>a</th><th>b</th></tr></thead><tbody><tr class=''><td class='mark'></td><td class='name'>A0</td><td>0</td><td>A0</td><td>A0</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A4</td><td>{4}</td><td>A0</td><td>A5</td></tr><tr class=''><td class='mark'></td><td class='name'>A5</td><td>{5}</td><td>A9</td><td>A4</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A9</td><td>{1 5}</td><td>A9</td><td>A4</td></tr><tr class='row-initial'><td class='mark'><span class='m-init' title='initial state'>&rarr;</span></td><td class='name'>A14</td><td>{3 5}</td><td>A28</td><td>A4</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A15</td><td>{4 5}</td><td>A9</td><td>A15</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A28</td><td>{1 2 4 5}</td><td>A9</td><td>A15</td></tr></tbody></table></div>
+      
+      
+      <details class="dead">
+        <summary>Unreachable states of M <span class="count count-dead">25</span>
+        &mdash; produced by the construction but never entered</summary>
+        <p class="hint">The construction builds every subset of Q. These ones cannot be
+        reached from the initial state by any string, so they are dead weight: they are
+        listed here for completeness and left out of the diagram.</p>
+        <div class="scroll"><table><thead><tr><th></th><th>M</th><th>subset of Q</th><th>a</th><th>b</th></tr></thead><tbody><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A1</td><td>{1}</td><td>A9</td><td>A0</td></tr><tr class=''><td class='mark'></td><td class='name'>A2</td><td>{2}</td><td>A1</td><td>A0</td></tr><tr class=''><td class='mark'></td><td class='name'>A3</td><td>{3}</td><td>A11</td><td>A0</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A6</td><td>{1 2}</td><td>A9</td><td>A0</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A7</td><td>{1 3}</td><td>A28</td><td>A0</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A8</td><td>{1 4}</td><td>A9</td><td>A5</td></tr><tr class=''><td class='mark'></td><td class='name'>A10</td><td>{2 3}</td><td>A17</td><td>A0</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A11</td><td>{2 4}</td><td>A1</td><td>A5</td></tr><tr class=''><td class='mark'></td><td class='name'>A12</td><td>{2 5}</td><td>A9</td><td>A4</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A13</td><td>{3 4}</td><td>A11</td><td>A5</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A16</td><td>{1 2 3}</td><td>A28</td><td>A0</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A17</td><td>{1 2 4}</td><td>A9</td><td>A5</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A18</td><td>{1 2 5}</td><td>A9</td><td>A4</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A19</td><td>{1 3 4}</td><td>A28</td><td>A5</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A20</td><td>{1 3 5}</td><td>A28</td><td>A4</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A21</td><td>{1 4 5}</td><td>A9</td><td>A15</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A22</td><td>{2 3 4}</td><td>A17</td><td>A5</td></tr><tr class=''><td class='mark'></td><td class='name'>A23</td><td>{2 3 5}</td><td>A28</td><td>A4</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A24</td><td>{2 4 5}</td><td>A9</td><td>A15</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A25</td><td>{3 4 5}</td><td>A28</td><td>A15</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A26</td><td>{1 2 3 4}</td><td>A28</td><td>A5</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A27</td><td>{1 2 3 5}</td><td>A28</td><td>A4</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A29</td><td>{1 3 4 5}</td><td>A28</td><td>A15</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A30</td><td>{2 3 4 5}</td><td>A28</td><td>A15</td></tr><tr class='row-final'><td class='mark'><span class='m-final' title='final state'>&larr;</span></td><td class='name'>A31</td><td>{1 2 3 4 5}</td><td>A28</td><td>A15</td></tr></tbody></table></div>
+      </details>
+    </div>
+  </div>
+</section>
+<footer>Generated by <code>main.py</code> &mdash; SI2002 Formal Languages, Universidad EAFIT.</footer>
+</div>
+</body>
+</html>
