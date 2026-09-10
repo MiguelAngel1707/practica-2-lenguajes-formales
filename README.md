@@ -76,6 +76,9 @@ start output.html
 
 ---
 
+## 🎬 Demo video
+https://github.com/user-attachments/assets/e71e3fae-a95a-49a0-924f-c90c6c816eac
+
 ## 📥 Input format
 
 Exactly the format described in Section 3 of the assignment:
@@ -275,8 +278,3 @@ Only 7 of the 32 subsets are reachable:
 drawn in `output.html`.
 
 ---
-
-## 🎬 Demo video(
-https://github.com/user-attachments/assets/e71e3fae-a95a-49a0-924f-c90c6c816eac
-
-<!-- Paste the demonstration video link above. -->
